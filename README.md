@@ -5,9 +5,10 @@ A shipment tracking system built for Go Between India Logistics — a logistics 
 ## What it does
 
 - Admin can create a shipment with sender and destination details
-- On confirmation, the system generates a unique tracking number for that shipment
-- Admin can update the shipment's tracking status as it moves (e.g., Picked Up → In Transit → Out for Delivery → Delivered)
-- Customers can look up their shipment status anytime using just the tracking number — no login required
+- On confirmation the system generates a unique tracking number for that shipment
+- Admin can update the shipment's tracking status as it moves for eg
+  confirmed -> shipped -> delivered
+- Customers can look up their shipment status anytime using just the tracking number no login required
 
 ## Tech Stack
 - **Frontend:** React
