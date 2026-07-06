@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import api from "../api/axios";
 
 function AdminDashboard() {
   const [shipments, setShipments] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     senderName: "", senderPhone: "", senderAddress: "", senderCity: "", senderState: "", senderPincode: "",
@@ -24,8 +26,18 @@ function AdminDashboard() {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const res = await api.get("/users");
+      setCustomers(res.data);
+    } catch (err) {
+      console.error("Failed to fetch customers", err);
+    }
+  };
+
   useEffect(() => {
     fetchShipments();
+    fetchCustomers();
   }, []);
 
   const handleChange = (e) => {
@@ -88,9 +100,52 @@ function AdminDashboard() {
     }
   };
 
+  const exportShipmentsToExcel = () => {
+    const rows = shipments.map((s) => ({
+      "Tracking Number": s.trackingNumber,
+      "Sender Name": s.sender.name,
+      "Sender Phone": s.sender.phone,
+      "Sender Address": s.sender.address,
+      "Sender City": s.sender.city,
+      "Sender State": s.sender.state,
+      "Sender Pincode": s.sender.pincode,
+      "Receiver Name": s.receiver.name,
+      "Receiver Phone": s.receiver.phone,
+      "Receiver Address": s.receiver.address,
+      "Receiver City": s.receiver.city,
+      "Receiver State": s.receiver.state,
+      "Receiver Pincode": s.receiver.pincode,
+      "Weight (kg)": s.packageDetails?.weight || "",
+      "Description": s.packageDetails?.description || "",
+      "Current Status": s.currentStatus,
+      "Created At": new Date(s.createdAt).toLocaleString(),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Shipments");
+    XLSX.writeFile(workbook, `GoBetween_Shipments_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
+  const exportCustomersToExcel = () => {
+    const rows = customers.map((c) => ({
+      "Name": c.name,
+      "Email": c.email,
+      "Phone": c.phone,
+      "Address": c.address,
+      "Company Name": c.companyName || "",
+      "Joined On": new Date(c.createdAt).toLocaleString(),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+    XLSX.writeFile(workbook, `GoBetween_Customers_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
     <div style={styles.container}>
-      <h1>Admin Dashboard — Go Between India Logistics</h1>
+      <h1>Admin Dashboard, Go Between India Logistics</h1>
 
       <section style={styles.section}>
         <h2>Create New Shipment</h2>
@@ -129,7 +184,12 @@ function AdminDashboard() {
       </section>
 
       <section style={styles.section}>
-        <h2>All Shipments</h2>
+        <div style={styles.sectionHeader}>
+          <h2>All Shipments</h2>
+          <button onClick={exportShipmentsToExcel} style={styles.exportButton}>
+            Export to Excel
+          </button>
+        </div>
         {loading ? (
           <p>Loading...</p>
         ) : shipments.length === 0 ? (
@@ -175,6 +235,41 @@ function AdminDashboard() {
           </table>
         )}
       </section>
+
+      <section style={styles.section}>
+        <div style={styles.sectionHeader}>
+          <h2>Registered Customers</h2>
+          <button onClick={exportCustomersToExcel} style={styles.exportButton}>
+            Export to Excel
+          </button>
+        </div>
+        {customers.length === 0 ? (
+          <p>No customers registered yet.</p>
+        ) : (
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Company</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {customers.map((c) => (
+                <tr key={c._id}>
+                  <td>{c.name}</td>
+                  <td>{c.email}</td>
+                  <td>{c.phone}</td>
+                  <td>{c.companyName || "N/A"}</td>
+                  <td>{new Date(c.createdAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }
@@ -182,9 +277,11 @@ function AdminDashboard() {
 const styles = {
   container: { maxWidth: "900px", margin: "40px auto", padding: "0 20px", fontFamily: "sans-serif" },
   section: { marginBottom: "40px" },
+  sectionHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" },
   form: { display: "flex", flexDirection: "column", gap: "16px" },
   fieldset: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", padding: "12px" },
   button: { padding: "10px 20px", fontSize: "16px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", width: "200px" },
+  exportButton: { padding: "8px 16px", background: "#0a7d2c", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
   message: { marginTop: "10px", fontWeight: "bold" },
   table: { width: "100%", borderCollapse: "collapse" },
 };
