@@ -5,39 +5,40 @@ const generateTrackingNumber = require("../utils/generateTrackingNumber");
 // @route  POST /api/shipments
 const createShipment = async (req, res) => {
   try {
-    const { sender, receiver, packageDetails } = req.body;
+    const { sender, receiver, packageDetails, mode, clientName, consignee } = req.body;
 
     if (!sender || !receiver) {
       return res.status(400).json({ message: "Sender and receiver details are required" });
     }
 
-    // Keep generating until we get a tracking number that isn't already used
-    let trackingNumber;
-    let exists = true;
-    while (exists) {
-      trackingNumber = generateTrackingNumber();
-      exists = await Shipment.findOne({ trackingNumber });
+    if (!mode || !clientName || !consignee) {
+      return res.status(400).json({ message: "Mode, client name, and consignee are required" });
     }
 
     const createdBy = {
       id: req.user.id,
       name: req.user.name || req.user.email,
       email: req.user.email,
+    };
+
+    let trackingNumber;
+    let exists = true;
+    while (exists) {
+      trackingNumber = generateTrackingNumber(mode);
+      exists = await Shipment.findOne({ trackingNumber });
     }
 
     const shipment = await Shipment.create({
       trackingNumber,
+      mode,
+      clientName,
+      consignee,
       sender,
       receiver,
       packageDetails,
       createdBy,
       currentStatus: "Pending",
-      statusHistory: [
-        {
-          status: "Pending",
-          note: "Shipment created",
-        },
-      ],
+      statusHistory: [{ status: "Pending", note: "Shipment created" }],
     });
 
     res.status(201).json(shipment);
@@ -91,7 +92,7 @@ const trackShipment = async (req, res) => {
     const { trackingNumber } = req.params;
 
     const shipment = await Shipment.findOne({ trackingNumber }).select(
-      "trackingNumber currentStatus statusHistory createdAt sender.city receiver.city"
+      "trackingNumber mode currentStatus statusHistory createdAt sender.city receiver.city"
     );
 
     if (!shipment) {

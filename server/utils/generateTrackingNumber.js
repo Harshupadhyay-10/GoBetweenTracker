@@ -1,10 +1,16 @@
 const { customAlphabet } = require("nanoid");
 
-// Alphanumeric, uppercase, no confusing characters (no 0/O, 1/I)
 const nanoid = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 8);
 
-function generateTrackingNumber() {
-  return `GBI${nanoid()}`; // e.g. GBI7F3K9QXZ
+const modePrefix = {
+  Air: "A",
+  Road: "R",
+  Sea: "S",
+};
+
+function generateTrackingNumber(mode) {
+  const prefix = modePrefix[mode] || "R";
+  return `GBI${prefix}${nanoid()}`; // e.g. GBIA7F3K9QXZ for an air shipment
 }
 
 module.exports = generateTrackingNumber;

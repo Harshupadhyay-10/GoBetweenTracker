@@ -55,6 +55,7 @@ return (
     {shipment && (
       <div className="card">
         <h2>Tracking Number: {shipment.trackingNumber}</h2>
+        <p><strong>Mode:</strong> {shipment.mode}</p>
         <p>
           <strong>From:</strong> {shipment.sender.city} &nbsp;to&nbsp;
           <strong>To:</strong> {shipment.receiver.city}

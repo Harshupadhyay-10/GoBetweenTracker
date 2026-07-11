@@ -28,8 +28,12 @@ const emptyPackage = {
 function AdminDashboard() {
   const [shipments, setShipments] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [mode, setMode] = useState("Road");
+  const [clientName, setClientName] = useState("");
+  const [consignee, setConsignee] = useState("");
   const [sender, setSender] = useState(emptyParty);
   const [receiver, setReceiver] = useState(emptyParty);
   const [packageDetails, setPackageDetails] = useState(emptyPackage);
@@ -37,18 +41,8 @@ function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
 
-  const [employees, setEmployees] = useState([]);
   const [employeeForm, setEmployeeForm] = useState({ name: "", email: "", password: "", phone: "", address: "" });
   const [creatingEmployee, setCreatingEmployee] = useState(false);
-
-  const fetchEmployees = async () => {
-    try {
-     const res = await api.get("/employees");
-     setEmployees(res.data);
-    } catch (err) {
-      console.error("Failed to fetch employees", err);
-    }
-  };
 
   const fetchShipments = async () => {
     setLoading(true);
@@ -71,6 +65,15 @@ function AdminDashboard() {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const res = await api.get("/employees");
+      setEmployees(res.data);
+    } catch (err) {
+      console.error("Failed to fetch employees", err);
+    }
+  };
+
   useEffect(() => {
     fetchShipments();
     fetchCustomers();
@@ -85,6 +88,9 @@ function AdminDashboard() {
     const payload = {
       sender,
       receiver,
+      mode,
+      clientName,
+      consignee,
       packageDetails: {
         ...packageDetails,
         weight: packageDetails.weight ? Number(packageDetails.weight) : undefined,
@@ -99,6 +105,9 @@ function AdminDashboard() {
     try {
       const res = await api.post("/shipments", payload);
       setMessage(`Shipment created. Tracking number: ${res.data.trackingNumber}`);
+      setMode("Road");
+      setClientName("");
+      setConsignee("");
       setSender(emptyParty);
       setReceiver(emptyParty);
       setPackageDetails(emptyPackage);
@@ -107,30 +116,6 @@ function AdminDashboard() {
       setMessage("Failed to create shipment. Check all required fields.");
     } finally {
       setCreating(false);
-    }
-  };
-
-  const handleCreateEmployee = async (e) => {
-      e.preventDefault();
-      setCreatingEmployee(true);
-    try {
-      await api.post("/employees", employeeForm);
-      setEmployeeForm({ name: "", email: "", password: "", phone: "", address: "" });
-      fetchEmployees();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to create employee");
-    } finally {
-      setCreatingEmployee(false);
-    }
-  };
-
-  const handleDeleteEmployee = async (id) => {
-    if (!confirm("Delete this employee account?")) return;
-  try {
-    await api.delete(`/employees/${id}`);
-    fetchEmployees();
-    } catch (err) {
-      alert("Failed to delete employee");
     }
   };
 
@@ -146,9 +131,36 @@ function AdminDashboard() {
     }
   };
 
+  const handleCreateEmployee = async (e) => {
+    e.preventDefault();
+    setCreatingEmployee(true);
+    try {
+      await api.post("/employees", employeeForm);
+      setEmployeeForm({ name: "", email: "", password: "", phone: "", address: "" });
+      fetchEmployees();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create employee");
+    } finally {
+      setCreatingEmployee(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (id) => {
+    if (!confirm("Delete this employee account?")) return;
+    try {
+      await api.delete(`/employees/${id}`);
+      fetchEmployees();
+    } catch (err) {
+      alert("Failed to delete employee");
+    }
+  };
+
   const exportShipmentsToExcel = () => {
     const rows = shipments.map((s) => ({
       "Tracking Number": s.trackingNumber,
+      "Mode": s.mode,
+      "Client Name": s.clientName,
+      "Consignee": s.consignee,
       "Sender Name": s.sender.name,
       "Sender Country Code": s.sender.countryCode,
       "Sender Phone": s.sender.phone,
@@ -170,14 +182,14 @@ function AdminDashboard() {
       "Height": s.packageDetails?.height || "",
       "Size Unit": s.packageDetails?.sizeUnit || "",
       "Description": s.packageDetails?.description || "",
-      "Added By": s.createdBy?.name || "N/A",
-      "Added By Email": s.createdBy?.email || "N/A",
       "Buying Rate": s.packageDetails?.buyingRate || "",
       "Selling Rate": s.packageDetails?.sellingRate || "",
       "Margin":
         s.packageDetails?.buyingRate && s.packageDetails?.sellingRate
           ? s.packageDetails.sellingRate - s.packageDetails.buyingRate
           : "",
+      "Added By": s.createdBy?.name || "N/A",
+      "Added By Email": s.createdBy?.email || "N/A",
       "Current Status": s.currentStatus,
       "Created At": new Date(s.createdAt).toLocaleString(),
     }));
@@ -211,6 +223,29 @@ function AdminDashboard() {
       <section className="section">
         <h2>Create New Shipment</h2>
         <form onSubmit={handleCreate} className="form">
+          <fieldset className="fieldset">
+            <legend>Booking Details</legend>
+            <div className="row">
+              <select value={mode} onChange={(e) => setMode(e.target.value)} required>
+                <option value="Road">By Road</option>
+                <option value="Air">By Air</option>
+                <option value="Sea">By Sea</option>
+              </select>
+              <input
+                placeholder="Client Name"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                required
+              />
+            </div>
+            <input
+              placeholder="Consignee"
+              value={consignee}
+              onChange={(e) => setConsignee(e.target.value)}
+              required
+            />
+          </fieldset>
+
           <AddressFields label="Sender" values={sender} onChange={setSender} />
           <AddressFields label="Receiver" values={receiver} onChange={setReceiver} />
 
@@ -304,6 +339,7 @@ function AdminDashboard() {
             <thead>
               <tr>
                 <th>Tracking #</th>
+                <th>Mode</th>
                 <th>From</th>
                 <th>To</th>
                 <th>Buying Rate</th>
@@ -323,6 +359,7 @@ function AdminDashboard() {
                 return (
                   <tr key={s._id}>
                     <td>{s.trackingNumber}</td>
+                    <td>{s.mode}</td>
                     <td>{s.sender.city}</td>
                     <td>{s.receiver.city}</td>
                     <td>{buying !== undefined && buying !== null ? `₹${buying}` : "N/A"}</td>
@@ -370,14 +407,41 @@ function AdminDashboard() {
         <h2>Employees</h2>
         <form onSubmit={handleCreateEmployee} className="form" style={{ marginBottom: "20px" }}>
           <div className="row">
-            <input placeholder="Name" value={employeeForm.name} onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })} required />
-            <input placeholder="Email" type="email" value={employeeForm.email} onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })} required />
+            <input
+              placeholder="Name"
+              value={employeeForm.name}
+              onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
+              required
+            />
+            <input
+              placeholder="Email"
+              type="email"
+              value={employeeForm.email}
+              onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })}
+              required
+            />
           </div>
           <div className="row">
-            <input placeholder="Password" type="password" value={employeeForm.password} onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })} required />
-            <input placeholder="Phone" value={employeeForm.phone} onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })} required />
+            <input
+              placeholder="Password"
+              type="password"
+              value={employeeForm.password}
+              onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
+              required
+            />
+            <input
+              placeholder="Phone"
+              value={employeeForm.phone}
+              onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
+              required
+            />
           </div>
-          <input placeholder="Address" value={employeeForm.address} onChange={(e) => setEmployeeForm({ ...employeeForm, address: e.target.value })} required />
+          <input
+            placeholder="Address"
+            value={employeeForm.address}
+            onChange={(e) => setEmployeeForm({ ...employeeForm, address: e.target.value })}
+            required
+          />
           <button type="submit" disabled={creatingEmployee} className="btn btn-primary" style={{ width: "200px" }}>
             {creatingEmployee ? "Creating..." : "Add Employee"}
           </button>
@@ -404,7 +468,9 @@ function AdminDashboard() {
                   <td>{emp.phone}</td>
                   <td>{new Date(emp.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <button onClick={() => handleDeleteEmployee(emp._id)} className="btn btn-danger">Delete</button>
+                    <button onClick={() => handleDeleteEmployee(emp._id)} className="btn btn-danger">
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

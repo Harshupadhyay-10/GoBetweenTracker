@@ -26,6 +26,15 @@ const shipmentSchema = new mongoose.Schema(
     sender: partySchema,
     receiver: partySchema,
 
+    mode: {
+      type: String,
+      enum: ["Air", "Road", "Sea"],
+      required: true,
+      default: "Road",
+      },
+      clientName: { type: String, required: true },
+      consignee: { type: String, required: true },
+
     createdBy: {
       id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       name: { type: String },
