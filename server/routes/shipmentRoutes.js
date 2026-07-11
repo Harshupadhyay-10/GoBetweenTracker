@@ -6,14 +6,12 @@ const {
   updateShipmentStatus,
   trackShipment,
 } = require("../controllers/shipmentController");
-const { protect, adminOnly } = require("../middleware/auth");
+const { protect, employeeOrAdmin } = require("../middleware/auth");
 
-// Admin-only routes
-router.post("/shipments", protect, adminOnly, createShipment);
-router.get("/shipments", protect, adminOnly, getAllShipments);
-router.patch("/shipments/:trackingNumber/status", protect, adminOnly, updateShipmentStatus);
+router.post("/shipments", protect, employeeOrAdmin, createShipment);
+router.get("/shipments", protect, employeeOrAdmin, getAllShipments);
+router.patch("/shipments/:trackingNumber/status", protect, employeeOrAdmin, updateShipmentStatus);
 
-// Public route, no login required
 router.get("/track/:trackingNumber", trackShipment);
 
-module.exports = router;
+module.exports = router; 

@@ -25,6 +25,12 @@ const shipmentSchema = new mongoose.Schema(
     trackingNumber: { type: String, required: true, unique: true },
     sender: partySchema,
     receiver: partySchema,
+
+    createdBy: {
+      id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      name: { type: String },
+      email: { type: String },
+      },
     
     packageDetails: {
       weight: { type: Number },

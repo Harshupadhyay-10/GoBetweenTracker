@@ -37,6 +37,19 @@ function AdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [employees, setEmployees] = useState([]);
+  const [employeeForm, setEmployeeForm] = useState({ name: "", email: "", password: "", phone: "", address: "" });
+  const [creatingEmployee, setCreatingEmployee] = useState(false);
+
+  const fetchEmployees = async () => {
+    try {
+     const res = await api.get("/employees");
+     setEmployees(res.data);
+    } catch (err) {
+      console.error("Failed to fetch employees", err);
+    }
+  };
+
   const fetchShipments = async () => {
     setLoading(true);
     try {
@@ -61,6 +74,7 @@ function AdminDashboard() {
   useEffect(() => {
     fetchShipments();
     fetchCustomers();
+    fetchEmployees();
   }, []);
 
   const handleCreate = async (e) => {
@@ -93,6 +107,30 @@ function AdminDashboard() {
       setMessage("Failed to create shipment. Check all required fields.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateEmployee = async (e) => {
+      e.preventDefault();
+      setCreatingEmployee(true);
+    try {
+      await api.post("/employees", employeeForm);
+      setEmployeeForm({ name: "", email: "", password: "", phone: "", address: "" });
+      fetchEmployees();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to create employee");
+    } finally {
+      setCreatingEmployee(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (id) => {
+    if (!confirm("Delete this employee account?")) return;
+  try {
+    await api.delete(`/employees/${id}`);
+    fetchEmployees();
+    } catch (err) {
+      alert("Failed to delete employee");
     }
   };
 
@@ -132,6 +170,8 @@ function AdminDashboard() {
       "Height": s.packageDetails?.height || "",
       "Size Unit": s.packageDetails?.sizeUnit || "",
       "Description": s.packageDetails?.description || "",
+      "Added By": s.createdBy?.name || "N/A",
+      "Added By Email": s.createdBy?.email || "N/A",
       "Buying Rate": s.packageDetails?.buyingRate || "",
       "Selling Rate": s.packageDetails?.sellingRate || "",
       "Margin":
@@ -321,6 +361,53 @@ function AdminDashboard() {
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="section">
+        <h2>Employees</h2>
+        <form onSubmit={handleCreateEmployee} className="form" style={{ marginBottom: "20px" }}>
+          <div className="row">
+            <input placeholder="Name" value={employeeForm.name} onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })} required />
+            <input placeholder="Email" type="email" value={employeeForm.email} onChange={(e) => setEmployeeForm({ ...employeeForm, email: e.target.value })} required />
+          </div>
+          <div className="row">
+            <input placeholder="Password" type="password" value={employeeForm.password} onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })} required />
+            <input placeholder="Phone" value={employeeForm.phone} onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })} required />
+          </div>
+          <input placeholder="Address" value={employeeForm.address} onChange={(e) => setEmployeeForm({ ...employeeForm, address: e.target.value })} required />
+          <button type="submit" disabled={creatingEmployee} className="btn btn-primary" style={{ width: "200px" }}>
+            {creatingEmployee ? "Creating..." : "Add Employee"}
+          </button>
+        </form>
+
+        {employees.length === 0 ? (
+          <p>No employees added yet.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Joined</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp._id}>
+                  <td>{emp.name}</td>
+                  <td>{emp.email}</td>
+                  <td>{emp.phone}</td>
+                  <td>{new Date(emp.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button onClick={() => handleDeleteEmployee(emp._id)} className="btn btn-danger">Delete</button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

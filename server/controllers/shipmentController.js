@@ -19,11 +19,18 @@ const createShipment = async (req, res) => {
       exists = await Shipment.findOne({ trackingNumber });
     }
 
+    const createdBy = {
+      id: req.user.id,
+      name: req.user.name || req.user.email,
+      email: req.user.email,
+    }
+
     const shipment = await Shipment.create({
       trackingNumber,
       sender,
       receiver,
       packageDetails,
+      createdBy,
       currentStatus: "Pending",
       statusHistory: [
         {
