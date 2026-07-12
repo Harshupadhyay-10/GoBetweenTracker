@@ -1,14 +1,15 @@
-const { Resend } = require("resend");
+const brevo = require("@getbrevo/brevo");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
 async function sendEmail({ to, subject, html }) {
   try {
-    await resend.emails.send({
-      from: "Go Between India Logistics <onboarding@resend.dev>",
-      to,
+    await apiInstance.sendTransacEmail({
+      sender: { name: "Go Between India Logistics", email: process.env.BREVO_SENDER_EMAIL },
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     });
     console.log("Email sent successfully to:", to);
   } catch (err) {
