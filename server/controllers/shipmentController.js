@@ -38,8 +38,8 @@ const createShipment = async (req, res) => {
       receiver,
       packageDetails,
       createdBy,
-      currentStatus: "Pending",
-      statusHistory: [{ status: "Pending", note: "Shipment created" }],
+      currentStatus: "Booked",
+      statusHistory: [{ status: "Booked", note: "Shipment created" }],
     });
 
     if (receiver.email) {
@@ -111,14 +111,13 @@ const updateShipmentStatus = async (req, res) => {
   }
 };
 
-// @desc   Public tracking lookup (customer) — only exposes safe fields
-// @route  GET /api/track/:trackingNumber
+
 const trackShipment = async (req, res) => {
   try {
     const { trackingNumber } = req.params;
 
     const shipment = await Shipment.findOne({ trackingNumber }).select(
-      "trackingNumber mode currentStatus statusHistory createdAt sender.city receiver.city"
+      "trackingNumber mode currentStatus statusHistory createdAt sender.city receiver.city packageDetails.weight packageDetails.weightUnit packageDetails.numberOfPackages"
     );
 
     if (!shipment) {

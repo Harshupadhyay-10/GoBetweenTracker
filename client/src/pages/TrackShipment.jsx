@@ -68,6 +68,12 @@ function TrackShipment() {
         <div className="card">
           <h2>Tracking Number: {shipment.trackingNumber}</h2>
           <p><strong>Mode:</strong> {shipment.mode}</p>
+          <p><strong>Mode:</strong> {shipment.mode}</p>
+          <p>
+            <strong>Weight:</strong> {shipment.packageDetails?.weight || "N/A"} {shipment.packageDetails?.weightUnit || ""}
+            &nbsp;|&nbsp;
+            <strong>Packages:</strong> {shipment.packageDetails?.numberOfPackages || "N/A"}
+          </p>
           <p>
             <strong>From:</strong> {shipment.sender.city} &nbsp;to&nbsp;
             <strong>To:</strong> {shipment.receiver.city}

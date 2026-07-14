@@ -57,8 +57,8 @@ const shipmentSchema = new mongoose.Schema(
 
     currentStatus: {
       type: String,
-      enum: ["Pending", "Picked Up", "In Transit", "Out for Delivery", "Delivered", "Cancelled"],
-      default: "Pending",
+      enum: ["Booked", "Picked Up", "In Transit", "Out for Delivery", "Delivered", "Cancelled"],
+      default: "Booked",
     },
 
     statusHistory: [statusHistorySchema],

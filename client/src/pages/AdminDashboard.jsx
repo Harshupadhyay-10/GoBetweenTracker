@@ -442,7 +442,7 @@ function AdminDashboard() {
                         }}
                       >
                         <option value="" disabled>Change status</option>
-                        <option value="Pending">Pending</option>
+                        <option value="Booked">Booked</option>
                         <option value="Picked Up">Picked Up</option>
                         <option value="In Transit">In Transit</option>
                         <option value="Out for Delivery">Out for Delivery</option>

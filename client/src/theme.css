@@ -214,7 +214,7 @@ th {
   font-weight: 600;
 }
 
-.status-Pending { background: #FFF3CD; color: #7A5B00; }
+.status-Booked { background: #FFF3CD; color: #7A5B00; }
 .status-Picked\ Up { background: #D6E9FA; color: #1B4B7A; }
 .status-In\ Transit { background: #D6E9FA; color: #1B4B7A; }
 .status-Out\ for\ Delivery { background: #E3D6FA; color: #5B1B7A; }
