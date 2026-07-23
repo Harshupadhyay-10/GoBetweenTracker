@@ -34,4 +34,4 @@ The public tracking page only shows city-level location and status, never full a
 
 ## Status
 
-Live and handling real shipments.
+Live and handling real shipments in real time.
